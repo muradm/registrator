@@ -3,6 +3,10 @@
 # registrator uses different docker.sock location than default
 DOCKER_SOCK=/tmp/docker.sock
 
+HOST_NAME_TAG=$(curl -s --unix-socket ${DOCKER_SOCK} http:/info | jq '.Name')
+HOST_NAME_TAG=${HOST_NAME_TAG//\"}
+HOST_NAME_TAG="-tags $HOST_NAME_TAG"
+
 HOST_IP=
 if [ -n "$DISCOVER_HOST_IP" ]; then
     host_ip=$(curl -s --unix-socket ${DOCKER_SOCK} http:/info | jq '.Swarm.NodeAddr')
@@ -26,6 +30,6 @@ if [ -n "$DISCOVER_CONSUL_AGENT" ]; then
     CONSUL_AGENT="consul://$consul_agent_ip:8500"
 fi
 
-set -- ${HOST_IP} "$@"
+set -- ${HOST_IP} ${HOST_NAME_TAG} "$@"
 
 exec /bin/registrator $@ ${CONSUL_AGENT}
