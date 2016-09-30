@@ -13,6 +13,7 @@ import (
 	"github.com/gliderlabs/pkg/usage"
 	"github.com/gliderlabs/registrator/bridge"
 	"github.com/docker/engine-api/types/swarm"
+	"github.com/gliderlabs/registrator/util"
 )
 
 var Version string
@@ -23,7 +24,7 @@ var hostIp = flag.String("ip", "", "IP for ports mapped to the host")
 var internal = flag.Bool("internal", false, "Use internal ports instead of published ones")
 var refreshInterval = flag.Int("ttl-refresh", 0, "Frequency with which service TTLs are refreshed")
 var refreshTtl = flag.Int("ttl", 0, "TTL for services (default is no expiry)")
-var forceTags = flag.String("tags", "", "Append tags for all registered services")
+var forceTags args.StringArray
 var resyncInterval = flag.Int("resync", 0, "Frequency with which services are resynchronized")
 var deregister = flag.String("deregister", "always", "Deregister exited services \"always\" or \"on-success\"")
 var retryAttempts = flag.Int("retry-attempts", 0, "Max retry attempts to establish a connection with the backend. Use -1 for infinite retries")
@@ -50,6 +51,7 @@ func main() {
 	}
 	log.Printf("Starting registrator %s ...", Version)
 
+	flag.Var(&forceTags, "tags", "Append tags for all registered services (apply multiple times: -tags t1 -tags t2 -tags t3,t4)")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s [options] <registry URI>\n\n", os.Args[0])
@@ -118,7 +120,7 @@ func main() {
 		NodeId:          *nodeId,
 		HostIp:          *hostIp,
 		Internal:        *internal,
-		ForceTags:       *forceTags,
+		ForceTags:       forceTags.String(),
 		RefreshTtl:      *refreshTtl,
 		RefreshInterval: *refreshInterval,
 		DeregisterCheck: *deregister,
