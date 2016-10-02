@@ -19,12 +19,9 @@ fi
 
 CONSUL_AGENT=
 if [ -n "$DISCOVER_CONSUL_AGENT" ]; then
-    node_id=$(curl -s --unix-socket ${DOCKER_SOCK} http:/info | jq '.Swarm.NodeID')
-    node_id=${node_id//\"}
+    jq_query=".[] | .NetworkSettings.Networks.\"$DISCOVER_NETWORK\".IPAddress"
 
-    jq_query=".[] | select(.Names[] | contains (\"$DISCOVER_CONSUL_AGENT.$node_id\")) | .NetworkSettings.Networks.\"$DISCOVER_NETWORK\".IPAddress"
-
-    consul_agent_ip=$(curl -s --unix-socket ${DOCKER_SOCK} http:/containers/json | jq "${jq_query}")
+    consul_agent_ip=$(curl -G -s --unix-socket ${DOCKER_SOCK} http/containers/json --data-urlencode 'filters={"label":["consul=agent"]}' | jq "${jq_query}")
     consul_agent_ip=${consul_agent_ip//\"}
 
     CONSUL_AGENT="consul://$consul_agent_ip:8500"
